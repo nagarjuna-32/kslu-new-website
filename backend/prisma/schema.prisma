@@ -1,0 +1,439 @@
+// Prisma Schema for KSLU Circle Academic Platform
+// Production Target: PostgreSQL (Neon Serverless Postgres)
+// Local Development Target: SQLite / PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String            @id @default(cuid())
+  email                String            @unique
+  passwordHash         String?
+  fullName             String
+  avatarUrl            String?
+  role                 String            @default("USER") // USER, ADMIN, SUPERADMIN
+  collegeName          String?
+  phone                String?
+  courseId             String?
+  semesterId           String?
+  isEmailVerified      Boolean           @default(false)
+  googleId             String?           @unique
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+  lastLoginAt          DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  course               Course?           @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  semester             Semester?         @relation(fields: [semesterId], references: [id], onDelete: SetNull)
+
+  questionPapers       QuestionPaper[]   @relation("PYQUploader")
+  studyMaterials       StudyMaterial[]   @relation("NotesUploader")
+  approvedMaterials    StudyMaterial[]   @relation("NotesApprover")
+  bookmarks            Bookmark[]
+  votes                Vote[]
+  discussionVotes      DiscussionVote[]
+  downloadLogs         DownloadLog[]
+  notifications        Notification[]
+  announcements        Announcement[]
+  discussions          Discussion[]
+  comments             Comment[]
+  reportsFiled         Report[]          @relation("ReportReporter")
+  reportsResolved      Report[]          @relation("ReportResolver")
+  auditLogs            AuditLog[]
+  careerOpportunities  CareerOpportunity[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Course {
+  id              String            @id @default(cuid())
+  code            String            @unique // e.g. "3YR-LLB", "5YR-BALLB", "5YR-BBALLB", "5YR-BCOMLLB", "5YR-BSCLB"
+  name            String            // e.g. "3-Year LL.B", "5-Year B.A. LL.B"
+  durationYears   Int
+  totalSemesters  Int
+  description     String?
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  semesters       Semester[]
+  subjects        Subject[]
+  questionPapers  QuestionPaper[]
+  studyMaterials  StudyMaterial[]
+  discussions     Discussion[]
+  users           User[]
+
+  @@index([code])
+}
+
+model Semester {
+  id              String            @id @default(cuid())
+  courseId        String
+  semesterNumber  Int               // 1 to 10
+  title           String            // e.g. "Semester I", "Semester II"
+  description     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  course          Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  subjects        Subject[]
+  questionPapers  QuestionPaper[]
+  studyMaterials  StudyMaterial[]
+  discussions     Discussion[]
+  users           User[]
+
+  @@unique([courseId, semesterNumber])
+  @@index([courseId])
+}
+
+model Scheme {
+  id              String            @id @default(cuid())
+  code            String            @unique // e.g. "80_MARKS", "100_MARKS"
+  name            String            // "Scheme 80 Marks", "Scheme 100 Marks"
+  maxMarks        Int               // 80 or 100
+  passingMarks    Int               // 32 or 40
+  description     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  questionPapers  QuestionPaper[]
+  studyMaterials  StudyMaterial[]
+
+  @@index([code])
+}
+
+model Subject {
+  id              String            @id @default(cuid())
+  courseId        String
+  semesterId      String
+  code            String            // e.g. "KSLU-101", "1011"
+  name            String            // e.g. "Constitutional Law I", "Law of Torts"
+  description     String?
+  isCore          Boolean           @default(true)
+  credits         Int               @default(4)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  course          Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  semester        Semester          @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  questionPapers  QuestionPaper[]
+  studyMaterials  StudyMaterial[]
+  discussions     Discussion[]
+
+  @@unique([courseId, semesterId, code])
+  @@index([courseId])
+  @@index([semesterId])
+  @@index([code])
+}
+
+model QuestionPaper {
+  id              String            @id @default(cuid())
+  title           String
+  courseId        String
+  semesterId      String
+  subjectId       String
+  schemeId        String
+  examYear        Int               // e.g. 2023, 2022
+  examMonth       String            // "January", "June", "December"
+  examType        String            @default("REGULAR") // REGULAR, REVALUATION, SUPPLEMENTARY
+  fileUrl         String
+  filePublicId    String?
+  fileSize        Int               @default(0)
+  fileType        String            @default("application/pdf")
+  totalPages      Int               @default(1)
+  downloadCount   Int               @default(0)
+  viewCount       Int               @default(0)
+  uploadedById    String?
+  isVerified      Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  course          Course            @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  semester        Semester          @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+  subject         Subject           @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  scheme          Scheme            @relation(fields: [schemeId], references: [id], onDelete: Restrict)
+  uploadedBy      User?             @relation("PYQUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  bookmarks       Bookmark[]
+  downloadLogs    DownloadLog[]
+
+  @@index([courseId])
+  @@index([semesterId])
+  @@index([subjectId])
+  @@index([schemeId])
+  @@index([examYear])
+}
+
+model StudyMaterial {
+  id              String            @id @default(cuid())
+  title           String
+  description     String
+  courseId        String
+  semesterId      String
+  subjectId       String
+  schemeId        String?
+  tags            String?           // Comma-separated or JSON string
+  fileUrl         String
+  filePublicId    String?
+  fileSize        Int               @default(0)
+  fileType        String            @default("application/pdf")
+  totalPages      Int               @default(1)
+  status          String            @default("PENDING") // PENDING, APPROVED, REJECTED
+  rejectionReason String?
+  approvedById    String?
+  approvedAt      DateTime?
+  downloadCount   Int               @default(0)
+  upvotesCount    Int               @default(0)
+  downvotesCount  Int               @default(0)
+  uploadedById    String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  course          Course            @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  semester        Semester          @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+  subject         Subject           @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  scheme          Scheme?           @relation(fields: [schemeId], references: [id], onDelete: SetNull)
+  uploadedBy      User              @relation("NotesUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  approvedBy      User?             @relation("NotesApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  bookmarks       Bookmark[]
+  votes           Vote[]
+  downloadLogs    DownloadLog[]
+  reports         Report[]
+
+  @@index([courseId])
+  @@index([semesterId])
+  @@index([subjectId])
+  @@index([status])
+  @@index([uploadedById])
+}
+
+model Bookmark {
+  id              String            @id @default(cuid())
+  userId          String
+  itemType        String            // "PYQ" or "STUDY_MATERIAL"
+  questionPaperId String?
+  studyMaterialId String?
+  createdAt       DateTime          @default(now())
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionPaper   QuestionPaper?    @relation(fields: [questionPaperId], references: [id], onDelete: Cascade)
+  studyMaterial   StudyMaterial?    @relation(fields: [studyMaterialId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemType, questionPaperId, studyMaterialId])
+  @@index([userId])
+}
+
+model Vote {
+  id              String            @id @default(cuid())
+  userId          String
+  studyMaterialId String
+  voteType        String            // "UPVOTE" or "DOWNVOTE"
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studyMaterial   StudyMaterial     @relation(fields: [studyMaterialId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, studyMaterialId])
+  @@index([studyMaterialId])
+}
+
+model DiscussionVote {
+  id              String            @id @default(cuid())
+  userId          String
+  discussionId    String
+  voteType        String            // "UPVOTE" or "DOWNVOTE"
+  createdAt       DateTime          @default(now())
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discussion      Discussion        @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, discussionId])
+  @@index([discussionId])
+}
+
+model DownloadLog {
+  id              String            @id @default(cuid())
+  userId          String?
+  itemType        String            // "PYQ" or "STUDY_MATERIAL"
+  questionPaperId String?
+  studyMaterialId String?
+  ipAddress       String?
+  userAgent       String?
+  downloadedAt    DateTime          @default(now())
+
+  user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  questionPaper   QuestionPaper?    @relation(fields: [questionPaperId], references: [id], onDelete: SetNull)
+  studyMaterial   StudyMaterial?    @relation(fields: [studyMaterialId], references: [id], onDelete: SetNull)
+
+  @@index([itemType])
+  @@index([userId])
+}
+
+model Notification {
+  id              String            @id @default(cuid())
+  userId          String
+  title           String
+  message         String
+  type            String            @default("SYSTEM") // SYSTEM, APPROVAL, REJECTION, ANNOUNCEMENT, COMMUNITY, CAREER
+  linkUrl         String?
+  isRead          Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+model Announcement {
+  id                String          @id @default(cuid())
+  title             String
+  slug              String          @unique
+  content           String
+  category          String          // EXAMINATION, TIMETABLE, RESULTS, ACADEMIC_CALENDAR, UNIVERSITY_CIRCULAR, COMPETITION
+  isImportant       Boolean         @default(false)
+  officialSourceUrl String?
+  publishedAt       DateTime        @default(now())
+  authorId          String
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  author            User            @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([slug])
+  @@index([category])
+  @@index([isImportant])
+}
+
+model Discussion {
+  id              String            @id @default(cuid())
+  title           String
+  content         String
+  courseId        String?
+  semesterId      String?
+  subjectId       String?
+  authorId        String
+  upvotesCount    Int               @default(0)
+  downvotesCount  Int               @default(0)
+  viewsCount      Int               @default(0)
+  isSolved        Boolean           @default(false)
+  isPinned        Boolean           @default(false)
+  isLocked        Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  course          Course?           @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  semester        Semester?         @relation(fields: [semesterId], references: [id], onDelete: SetNull)
+  subject         Subject?          @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  author          User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  comments        Comment[]
+  reports         Report[]
+  votes           DiscussionVote[]
+
+  @@index([courseId])
+  @@index([semesterId])
+  @@index([subjectId])
+  @@index([authorId])
+}
+
+model Comment {
+  id                String          @id @default(cuid())
+  discussionId      String
+  authorId          String
+  content           String
+  upvotesCount      Int             @default(0)
+  isAcceptedAnswer  Boolean         @default(false)
+  parentCommentId   String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  discussion        Discussion      @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  author            User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentComment     Comment?        @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  childComments     Comment[]       @relation("CommentReplies")
+
+  reports           Report[]
+
+  @@index([discussionId])
+  @@index([authorId])
+}
+
+model Report {
+  id              String            @id @default(cuid())
+  reporterId      String
+  itemType        String            // STUDY_MATERIAL, DISCUSSION, COMMENT
+  studyMaterialId String?
+  discussionId    String?
+  commentId       String?
+  reason          String            // PLAGIARISM, INAPPROPRIATE, MISINFORMATION, COPYRIGHT, OTHER
+  details         String?
+  status          String            @default("PENDING") // PENDING, RESOLVED, DISMISSED
+  resolvedById    String?
+  resolvedAt      DateTime?
+  resolutionNotes String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  reporter        User              @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolver        User?             @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  studyMaterial   StudyMaterial?    @relation(fields: [studyMaterialId], references: [id], onDelete: Cascade)
+  discussion      Discussion?       @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  comment         Comment?          @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([itemType])
+}
+
+model AuditLog {
+  id              String            @id @default(cuid())
+  userId          String?
+  action          String            // e.g. USER_LOGIN, NOTE_APPROVED, NOTE_REJECTED, PYQ_UPLOADED
+  resourceType    String            // User, StudyMaterial, QuestionPaper, etc.
+  resourceId      String?
+  ipAddress       String?
+  details         String?
+  createdAt       DateTime          @default(now())
+
+  user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model CareerOpportunity {
+  id                String          @id @default(cuid())
+  title             String
+  organization      String
+  opportunityType   String          // INTERNSHIP, MOOT_COURT, RESEARCH, WORKSHOP, ALUMNI_JOB, COMPETITION
+  location          String          // "Bengaluru, Karnataka", "Remote", etc.
+  stipend           String?
+  deadline          DateTime?
+  applyUrl          String?
+  contactEmail      String?
+  description       String
+  eligibility       String?
+  isFeatured        Boolean         @default(false)
+  isActive          Boolean         @default(true)
+  createdById       String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  createdBy         User            @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([opportunityType])
+  @@index([isActive])
+  @@index([deadline])
+}
