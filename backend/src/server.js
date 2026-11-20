@@ -102,7 +102,7 @@ app.use(errorHandler);
 
 const PORT = parseInt(process.env.PORT, 10) || 5000;
 
-if (process.env.NODE_ENV !== 'test') {
+if (require.main === module) {
   server.listen(PORT, () => {
     logger.info(`=======================================================`);
     logger.info(` KSLU Circle Backend running on port ${PORT}`);
