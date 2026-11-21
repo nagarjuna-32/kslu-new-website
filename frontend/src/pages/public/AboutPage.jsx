@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Scale, ShieldAlert, BookOpen, Users, Award, HeartHandshake } from 'lucide-react';
 
 export const AboutPage = () => {
@@ -21,14 +22,36 @@ export const AboutPage = () => {
         </div>
       </div>
 
-      {/* Strict Disclaimer Card */}
-      <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 text-xs text-amber-900 dark:text-amber-200 space-y-2">
-        <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
-          <ShieldAlert className="w-5 h-5" />
-          <span>Independent Platform Disclaimer</span>
+      {/* Strict Official Disclaimer Card */}
+      <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-3xl p-6 sm:p-8 text-xs sm:text-sm text-amber-950 dark:text-amber-200 space-y-3">
+        <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-amber-200/80 dark:border-amber-800/80">
+          <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
+            <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <span className="font-serif text-base font-bold">Official Disclaimer</span>
+          </div>
+          <Link
+            to="/disclaimer"
+            className="text-xs font-semibold text-amber-800 dark:text-amber-300 hover:underline"
+          >
+            Read Complete Policy &rarr;
+          </Link>
         </div>
         <p className="leading-relaxed">
-          KSLU Circle is an independent student peer-learning platform. It is <strong>not affiliated with, endorsed by, sponsored by, or operated by Karnataka State Law University (KSLU)</strong> or any governmental department. All question papers, study materials, and discussion entries are shared by student contributors for pedagogical and non-commercial educational purposes.
+          KSLU Circle is an independent, student-developed academic resource and peer-learning platform created and maintained by students for the benefit of students affiliated with Karnataka State Law University (KSLU).
+        </p>
+        <p className="leading-relaxed font-semibold">
+          This platform is not an official website, portal, or application of Karnataka State Law University (KSLU). It is not affiliated with, associated with, authorized, endorsed, or operated by KSLU or any of its official departments.
+        </p>
+        <p className="leading-relaxed text-xs text-amber-900/80 dark:text-amber-300/80">
+          All study materials, previous year question papers, notes, and other academic resources are provided for educational and reference purposes only. Students are advised to verify official circulars, exam dates, and syllabi through the official university website:{' '}
+          <a
+            href="https://kslu.karnataka.gov.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline font-bold text-amber-950 dark:text-amber-100"
+          >
+            https://kslu.karnataka.gov.in
+          </a>
         </p>
       </div>
 

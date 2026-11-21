@@ -15,6 +15,7 @@ import { AboutPage } from '../pages/public/AboutPage';
 import { ContactPage } from '../pages/public/ContactPage';
 import { CourseExplorerPage } from '../pages/public/CourseExplorerPage';
 import { ResourcesOverviewPage } from '../pages/public/ResourcesOverviewPage';
+import { DisclaimerPage } from '../pages/public/DisclaimerPage';
 
 // Module Pages
 import { PYQLibraryPage } from '../pages/pyq/PYQLibraryPage';
@@ -59,6 +60,7 @@ export const AppRoutes = () => {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/disclaimer" element={<DisclaimerPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/resources" element={<ResourcesOverviewPage />} />
         <Route path="/courses" element={<CourseExplorerPage />} />

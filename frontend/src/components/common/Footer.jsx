@@ -19,14 +19,22 @@ export const Footer = () => {
     <footer className="bg-navy-950 text-navy-300 border-t border-navy-800 text-xs">
       {/* Official Legal Disclaimer Banner */}
       <div className="bg-navy-900 border-b border-navy-800/80 py-3.5 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex items-start sm:items-center gap-3">
-          <ShieldAlert className="w-4 h-4 text-gold-400 shrink-0 mt-0.5 sm:mt-0" />
-          <p className="text-[11px] leading-relaxed text-navy-300">
-            <strong className="text-gold-400 font-semibold uppercase tracking-wider">Independent Academic Disclaimer: </strong>
-            KSLU Circle is an independent student-led peer-learning and academic repository. It is{' '}
-            <span className="text-white font-medium">not affiliated with, endorsed by, or operated by Karnataka State Law University (KSLU)</span>.
-            All official university circulars, exam dates, and syllabi must be verified directly against the university's official portal.
-          </p>
+        <div className="max-w-7xl mx-auto flex items-start sm:items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-start sm:items-center gap-3 flex-1 min-w-[280px]">
+            <ShieldAlert className="w-4 h-4 text-gold-400 shrink-0 mt-0.5 sm:mt-0" />
+            <p className="text-[11px] leading-relaxed text-navy-300">
+              <strong className="text-gold-400 font-semibold uppercase tracking-wider">Disclaimer: </strong>
+              KSLU Circle is an independent, student-developed academic resource and peer-learning platform. It is{' '}
+              <span className="text-white font-medium">not an official website, portal, or application of Karnataka State Law University (KSLU)</span>{' '}
+              and is not affiliated with, authorized, endorsed, or operated by KSLU or any of its official departments.
+            </p>
+          </div>
+          <Link
+            to="/disclaimer"
+            className="text-[11px] font-semibold text-gold-400 hover:text-white underline shrink-0 ml-7 sm:ml-0"
+          >
+            Read Full Disclaimer &rarr;
+          </Link>
         </div>
       </div>
 
@@ -185,6 +193,11 @@ export const Footer = () => {
                 </a>
               </li>
               <li>
+                <Link to="/disclaimer" className="text-gold-400 font-semibold hover:text-white transition">
+                  Official Disclaimer
+                </Link>
+              </li>
+              <li>
                 <Link to="/about" className="hover:text-gold-400 transition">
                   About KSLU Circle
                 </Link>
@@ -200,11 +213,23 @@ export const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="pt-8 mt-8 border-t border-navy-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-navy-400">
-          <p>© {new Date().getFullYear()} KSLU Circle. Developed for the student community of Karnataka State Law University.</p>
-          <div className="flex items-center gap-4">
+          <p>© KSLU Circle. All rights reserved.</p>
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <Link to="/disclaimer" className="text-gold-400 hover:text-white transition font-medium">Disclaimer</Link>
+            <span className="text-navy-700">•</span>
             <Link to="/about" className="hover:text-white transition">Platform Guidelines</Link>
             <span className="text-navy-700">•</span>
             <Link to="/contact" className="hover:text-white transition">Report an Issue</Link>
+            <span className="text-navy-700">•</span>
+            <a
+              href="https://kslu.karnataka.gov.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-navy-400 hover:text-gold-400 hover:underline flex items-center gap-1"
+            >
+              <span>kslu.karnataka.gov.in</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
           </div>
         </div>
       </div>
