@@ -89,6 +89,11 @@ app.get('/', (req, res) => {
   });
 });
 
+// Root health check endpoint for cloud load balancers (Render, Railway, Fly.io, AWS)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({

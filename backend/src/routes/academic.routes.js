@@ -9,6 +9,7 @@ router.get('/courses/:courseId/semesters', academicController.getSemestersByCour
 router.get('/subjects', academicController.getSubjects);
 router.get('/subjects/:id', academicController.getSubjectById);
 router.get('/schemes', academicController.getSchemes);
+router.get('/stats', academicController.getPlatformStats);
 
 // Admin routes
 router.post('/courses', authenticate, authorize('ADMIN', 'SUPERADMIN'), academicController.adminCreateCourse);

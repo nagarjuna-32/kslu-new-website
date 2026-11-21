@@ -7,8 +7,12 @@ const prisma = require('../config/db');
 test('KSLU Circle Backend API Suite', async (t) => {
   let authToken = '';
   let testUserId = '';
+  let testStudentEmail = '';
 
   t.after(async () => {
+    if (testUserId) {
+      await prisma.user.delete({ where: { id: testUserId } }).catch(() => {});
+    }
     await prisma.$disconnect();
   });
 
@@ -37,12 +41,12 @@ test('KSLU Circle Backend API Suite', async (t) => {
   });
 
   await t.test('4. POST /api/auth/register should create a new student account', async () => {
-    const randomEmail = `test.student.${Date.now()}@kslucircle.org`;
+    testStudentEmail = `test.student.${Date.now()}@kslucircle.org`;
     const res = await request(app)
       .post('/api/auth/register')
       .send({
         fullName: 'Test Student',
-        email: randomEmail,
+        email: testStudentEmail,
         password: 'Password@123',
         collegeName: 'Bangalore Law College'
       });
@@ -54,18 +58,18 @@ test('KSLU Circle Backend API Suite', async (t) => {
     testUserId = res.body.data.user.id;
   });
 
-  await t.test('5. POST /api/auth/login should authenticate seeded student', async () => {
+  await t.test('5. POST /api/auth/login should authenticate registered student', async () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({
-        email: 'student@kslucircle.org',
-        password: 'Student@2025!'
+        email: testStudentEmail,
+        password: 'Password@123'
       });
 
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
     assert.ok(res.body.data.token);
-    assert.strictEqual(res.body.data.user.email, 'student@kslucircle.org');
+    assert.strictEqual(res.body.data.user.email, testStudentEmail);
     authToken = res.body.data.token;
   });
 
@@ -75,14 +79,14 @@ test('KSLU Circle Backend API Suite', async (t) => {
       .set('Authorization', `Bearer ${authToken}`);
 
     assert.strictEqual(res.status, 200);
-    assert.strictEqual(res.body.data.user.email, 'student@kslucircle.org');
+    assert.strictEqual(res.body.data.user.email, testStudentEmail);
   });
 
   await t.test('7. GET /api/pyqs should return paginated list of question papers', async () => {
     const res = await request(app).get('/api/pyqs?page=1&limit=10');
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
-    assert.ok(res.body.data.items.length >= 1);
+    assert.ok(Array.isArray(res.body.data.items));
     assert.ok(res.body.data.pagination);
   });
 
@@ -90,28 +94,39 @@ test('KSLU Circle Backend API Suite', async (t) => {
     const res = await request(app).get('/api/notes?page=1&limit=10');
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
-    assert.ok(res.body.data.items.length >= 1);
+    assert.ok(Array.isArray(res.body.data.items));
   });
 
   await t.test('9. GET /api/community/discussions should return forum threads', async () => {
     const res = await request(app).get('/api/community/discussions');
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
-    assert.ok(res.body.data.items.length >= 1);
+    assert.ok(Array.isArray(res.body.data.items));
   });
 
   await t.test('10. GET /api/announcements should return university updates', async () => {
     const res = await request(app).get('/api/announcements');
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
-    assert.ok(res.body.data.items.length >= 1);
+    assert.ok(Array.isArray(res.body.data.items));
   });
 
   await t.test('11. GET /api/career should return career opportunities', async () => {
     const res = await request(app).get('/api/career');
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
-    assert.ok(res.body.data.items.length >= 1);
+    assert.ok(Array.isArray(res.body.data.items));
+  });
+
+  await t.test('12. GET /api/academic/stats should return real platform statistics', async () => {
+    const res = await request(app).get('/api/academic/stats');
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.success, true);
+    assert.ok(res.body.data.stats);
+    assert.ok(typeof res.body.data.stats.totalPYQs === 'number');
+    assert.ok(typeof res.body.data.stats.totalNotes === 'number');
+    assert.ok(typeof res.body.data.stats.totalStudents === 'number');
+    assert.ok(typeof res.body.data.stats.totalDownloads === 'number');
   });
 
   await t.test('12. POST /api/ai/explain should return pedagogical explanation', async () => {

@@ -39,33 +39,16 @@ export const LoginPage = () => {
     }
   };
 
-  // Quick Demo Accounts Fill
-  const fillCredentials = (role) => {
-    if (role === 'student') {
-      setEmail('student@kslucircle.org');
-      setPassword('Student@2025!');
-    } else if (role === 'admin') {
-      setEmail('admin@kslucircle.org');
-      setPassword('Admin@2025!');
-    } else if (role === 'superadmin') {
-      setEmail('superadmin@kslucircle.org');
-      setPassword('SuperAdmin@2025!');
-    }
-  };
-
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-md w-full bg-white dark:bg-navy-900 rounded-3xl p-8 border border-navy-200 dark:border-navy-800 shadow-2xl space-y-6">
         <div className="text-center space-y-2">
-          <Link to="/" className="inline-flex items-center gap-2 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-navy-900 border border-gold-500/40 flex items-center justify-center p-1.5 shadow-md">
-              <img src="/logo-icon.svg" alt="KSLU Circle" className="w-full h-full" />
+          <Link to="/" className="inline-block group mb-1">
+            <div className="p-2.5 bg-white dark:bg-navy-800/80 rounded-2xl shadow-sm border border-navy-100 dark:border-navy-700/80 group-hover:scale-105 transition-transform">
+              <img src="/logo_stacked.png" alt="KSLU Circle" className="h-16 w-auto object-contain mx-auto" />
             </div>
-            <span className="font-serif font-bold text-xl text-navy-900 dark:text-white">
-              KSLU Circle
-            </span>
           </Link>
-          <h2 className="font-serif text-2xl font-bold text-navy-900 dark:text-white">
+          <h2 className="font-serif text-2xl font-bold text-navy-900 dark:text-white pt-2">
             Sign In to Your Account
           </h2>
           <p className="text-xs text-navy-500">

@@ -35,7 +35,12 @@ export const ForgotPasswordPage = () => {
         </Link>
 
         <div className="text-center space-y-2">
-          <h2 className="font-serif text-2xl font-bold text-navy-900 dark:text-white">
+          <Link to="/" className="inline-block group mb-1">
+            <div className="p-2 bg-white dark:bg-navy-800/80 rounded-2xl shadow-sm border border-navy-100 dark:border-navy-700/80 group-hover:scale-105 transition-transform">
+              <img src="/logo_stacked.png" alt="KSLU Circle" className="h-14 w-auto object-contain mx-auto" />
+            </div>
+          </Link>
+          <h2 className="font-serif text-2xl font-bold text-navy-900 dark:text-white pt-1">
             Reset Password
           </h2>
           <p className="text-xs text-navy-500">

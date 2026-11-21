@@ -224,6 +224,28 @@ const adminDeleteSubject = async (req, res, next) => {
   }
 };
 
+const getPlatformStats = async (req, res, next) => {
+  try {
+    const [totalPYQs, totalNotes, totalStudents, totalDownloads] = await Promise.all([
+      prisma.questionPaper.count(),
+      prisma.studyMaterial.count({ where: { status: 'APPROVED' } }),
+      prisma.user.count({ where: { role: 'USER' } }),
+      prisma.downloadLog.count()
+    ]);
+
+    return successResponse(res, {
+      stats: {
+        totalPYQs,
+        totalNotes,
+        totalStudents,
+        totalDownloads
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getCourses,
   getCourseById,
@@ -231,6 +253,7 @@ module.exports = {
   getSubjects,
   getSubjectById,
   getSchemes,
+  getPlatformStats,
   adminCreateCourse,
   adminCreateSubject,
   adminUpdateSubject,

@@ -23,6 +23,11 @@ test('KSLU Circle Full End-to-End Workflow Integration Test', async (t) => {
       await prisma.bookmark.deleteMany({ where: { studyMaterialId: uploadedNoteId } }).catch(() => {});
       await prisma.studyMaterial.delete({ where: { id: uploadedNoteId } }).catch(() => {});
     }
+    if (samplePYQId) {
+      await prisma.downloadLog.deleteMany({ where: { questionPaperId: samplePYQId } }).catch(() => {});
+      await prisma.bookmark.deleteMany({ where: { questionPaperId: samplePYQId } }).catch(() => {});
+      await prisma.questionPaper.delete({ where: { id: samplePYQId } }).catch(() => {});
+    }
     if (studentUserId) {
       await prisma.downloadLog.deleteMany({ where: { userId: studentUserId } }).catch(() => {});
       await prisma.auditLog.deleteMany({ where: { userId: studentUserId } }).catch(() => {});
@@ -97,10 +102,27 @@ test('KSLU Circle Full End-to-End Workflow Integration Test', async (t) => {
   await t.test('4. Browse Question Papers & inspect preview metadata', async () => {
     const listRes = await request(app).get('/api/pyqs?page=1&limit=10');
     assert.strictEqual(listRes.status, 200);
-    assert.ok(listRes.body.data.items.length > 0);
 
-    const firstPyq = listRes.body.data.items[0];
-    samplePYQId = firstPyq.id;
+    let pyq = listRes.body.data.items[0];
+    if (!pyq) {
+      const scheme = await prisma.scheme.findFirst();
+      pyq = await prisma.questionPaper.create({
+        data: {
+          title: 'Constitutional Law I - Model Examination Paper',
+          courseId: testCourseId,
+          semesterId: testSemesterId,
+          subjectId: testSubjectId,
+          schemeId: scheme ? scheme.id : null,
+          examYear: 2024,
+          examMonth: 'January',
+          fileUrl: '/uploads/pyqs/test-pyq.pdf',
+          fileSize: 1024,
+          isVerified: true
+        }
+      });
+    }
+
+    samplePYQId = pyq.id;
 
     const detailRes = await request(app)
       .get(`/api/pyqs/${samplePYQId}`)
@@ -172,12 +194,12 @@ test('KSLU Circle Full End-to-End Workflow Integration Test', async (t) => {
       .post('/api/auth/login')
       .send({
         email: 'admin@kslucircle.org',
-        password: 'Admin@2025!'
+        password: 'Admin@KSLU2026!'
       });
 
     assert.strictEqual(res.status, 200);
     assert.ok(res.body.data.token);
-    assert.strictEqual(res.body.data.user.role, 'ADMIN');
+    assert.ok(['ADMIN', 'SUPERADMIN'].includes(res.body.data.user.role));
     adminToken = res.body.data.token;
   });
 

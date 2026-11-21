@@ -74,21 +74,23 @@ export const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo & Brand */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-navy-900 dark:bg-navy-800 border border-gold-500/40 flex items-center justify-center p-1.5 shadow-md group-hover:scale-105 transition-transform">
-              <img src="/logo-icon.svg" alt="KSLU Circle" className="w-full h-full" />
-            </div>
+          <Link to="/" className="flex items-center gap-2.5 group shrink-0">
+            <img
+              src="/logo_icon.png"
+              alt="KSLU Circle Emblem"
+              className="w-10 h-10 object-contain rounded-xl shadow-sm group-hover:scale-105 transition-transform"
+            />
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-serif font-bold text-lg text-navy-900 dark:text-white tracking-tight">
+                <span className="font-serif font-bold text-lg text-navy-900 dark:text-white tracking-tight leading-none">
                   KSLU Circle
                 </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gold-100 dark:bg-gold-950/60 text-gold-700 dark:text-gold-400 border border-gold-300 dark:border-gold-800">
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gold-100 dark:bg-gold-950/60 text-gold-700 dark:text-gold-400 border border-gold-300 dark:border-gold-800">
                   Academic
                 </span>
               </div>
-              <p className="text-[11px] text-navy-500 dark:text-navy-400 hidden sm:block">
-                {t('brand.tagline')}
+              <p className="text-[10px] font-medium tracking-wide text-navy-500 dark:text-navy-400 hidden sm:block mt-0.5">
+                Learn • Share • Succeed
               </p>
             </div>
           </Link>

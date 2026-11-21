@@ -40,8 +40,8 @@ export const AdminLayout = () => {
       {/* Admin Top Header Bar */}
       <div className="bg-navy-900 text-white border-b border-navy-800 py-2 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-gold-400" />
+          <div className="flex items-center gap-2.5">
+            <img src="/logo_icon.png" alt="KSLU Circle" className="w-6 h-6 object-contain rounded-md" />
             <span className="text-xs font-semibold tracking-wide uppercase">
               KSLU Circle Administration Portal
             </span>

@@ -36,15 +36,17 @@ export const Footer = () => {
           {/* Brand info */}
           <div className="lg:col-span-2 space-y-4">
             <Link to="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-navy-900 border border-gold-500/40 flex items-center justify-center p-1.5 shadow-lg">
-                <img src="/logo-icon.svg" alt="KSLU Circle" className="w-full h-full" />
-              </div>
+              <img
+                src="/logo_icon.png"
+                alt="KSLU Circle Official Emblem"
+                className="w-12 h-12 object-contain rounded-xl shadow-lg shrink-0"
+              />
               <div>
-                <span className="font-serif font-bold text-lg text-white tracking-tight">
+                <span className="font-serif font-bold text-xl text-white tracking-tight block">
                   KSLU Circle
                 </span>
-                <p className="text-[11px] text-gold-400 font-medium">
-                  {t('brand.tagline')}
+                <p className="text-xs text-gold-400 font-semibold tracking-wide">
+                  Learn • Share • Succeed
                 </p>
               </div>
             </Link>

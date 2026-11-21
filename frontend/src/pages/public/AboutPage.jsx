@@ -5,15 +5,20 @@ export const AboutPage = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
       <div className="text-center space-y-4">
-        <span className="text-xs font-bold uppercase tracking-wider text-gold-600 dark:text-gold-400">
-          Academic Identity & Mission
-        </span>
-        <h1 className="font-serif text-3xl sm:text-4xl font-bold text-navy-900 dark:text-white">
-          About KSLU Circle
-        </h1>
-        <p className="text-sm sm:text-base text-navy-600 dark:text-navy-300 max-w-2xl mx-auto">
-          Your Academic World, All in One Circle. A student-led peer-learning initiative created for law students across Karnataka.
-        </p>
+        <div className="inline-block p-4 bg-white dark:bg-navy-800/90 rounded-3xl shadow-sm border border-navy-100 dark:border-navy-700/80 mx-auto mb-2">
+          <img src="/logo_horizontal.png" alt="KSLU Circle Official Logo" className="h-16 w-auto object-contain mx-auto" />
+        </div>
+        <div>
+          <span className="text-xs font-bold uppercase tracking-wider text-gold-600 dark:text-gold-400">
+            Academic Identity & Mission
+          </span>
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-navy-900 dark:text-white mt-1">
+            About KSLU Circle
+          </h1>
+          <p className="text-sm sm:text-base text-navy-600 dark:text-navy-300 max-w-2xl mx-auto mt-2">
+            Your Academic World, All in One Circle. A student-led peer-learning initiative created for law students across Karnataka.
+          </p>
+        </div>
       </div>
 
       {/* Strict Disclaimer Card */}

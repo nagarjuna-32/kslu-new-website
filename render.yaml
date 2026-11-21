@@ -33,3 +33,7 @@ services:
         value: kslu-circle
       - key: GEMINI_API_KEY
         sync: false
+      - key: INITIAL_SUPERADMIN_EMAIL
+        sync: false
+      - key: INITIAL_SUPERADMIN_PASSWORD
+        sync: false
