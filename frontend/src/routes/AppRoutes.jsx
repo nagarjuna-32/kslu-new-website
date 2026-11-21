@@ -14,15 +14,20 @@ import { HomePage } from '../pages/public/HomePage';
 import { AboutPage } from '../pages/public/AboutPage';
 import { ContactPage } from '../pages/public/ContactPage';
 import { CourseExplorerPage } from '../pages/public/CourseExplorerPage';
+import { ResourcesOverviewPage } from '../pages/public/ResourcesOverviewPage';
 
 // Module Pages
 import { PYQLibraryPage } from '../pages/pyq/PYQLibraryPage';
+import { PYQDetailPage } from '../pages/pyq/PYQDetailPage';
 import { NotesLibraryPage } from '../pages/notes/NotesLibraryPage';
+import { NoteDetailPage } from '../pages/notes/NoteDetailPage';
 import { UploadNotePage } from '../pages/notes/UploadNotePage';
 import { AIAssistantPage } from '../pages/ai/AIAssistantPage';
 import { CommunityPage } from '../pages/community/CommunityPage';
+import { DiscussionDetailPage } from '../pages/community/DiscussionDetailPage';
 import { CareerHubPage } from '../pages/career/CareerHubPage';
 import { AnnouncementsPage } from '../pages/announcements/AnnouncementsPage';
+import { AnnouncementDetailPage } from '../pages/announcements/AnnouncementDetailPage';
 
 // Auth Pages
 import { LoginPage } from '../pages/auth/LoginPage';
@@ -42,6 +47,8 @@ import { NotesModerationPage } from '../pages/admin/NotesModerationPage';
 import { AcademicManagementPage } from '../pages/admin/AcademicManagementPage';
 import { PYQManagementPage } from '../pages/admin/PYQManagementPage';
 import { UserManagementPage } from '../pages/admin/UserManagementPage';
+import { AdminAnnouncementsPage } from '../pages/admin/AdminAnnouncementsPage';
+import { AdminCareerPage } from '../pages/admin/AdminCareerPage';
 import { ReportsManagementPage } from '../pages/admin/ReportsManagementPage';
 import { AuditLogsPage } from '../pages/admin/AuditLogsPage';
 
@@ -53,9 +60,16 @@ export const AppRoutes = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/resources" element={<ResourcesOverviewPage />} />
         <Route path="/courses" element={<CourseExplorerPage />} />
+
+        {/* PYQs */}
         <Route path="/pyqs" element={<PYQLibraryPage />} />
+        <Route path="/pyqs/:id" element={<PYQDetailPage />} />
+
+        {/* Study Notes */}
         <Route path="/notes" element={<NotesLibraryPage />} />
+        <Route path="/notes/:id" element={<NoteDetailPage />} />
         <Route
           path="/notes/upload"
           element={
@@ -64,10 +78,20 @@ export const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+
+        {/* AI Study Assistant */}
         <Route path="/ai-tutor" element={<AIAssistantPage />} />
+
+        {/* Community Forum */}
         <Route path="/community" element={<CommunityPage />} />
+        <Route path="/community/:id" element={<DiscussionDetailPage />} />
+
+        {/* Career & Moot Hub */}
         <Route path="/career" element={<CareerHubPage />} />
+
+        {/* Announcements */}
         <Route path="/announcements" element={<AnnouncementsPage />} />
+        <Route path="/announcements/:slug" element={<AnnouncementDetailPage />} />
 
         {/* Auth routes */}
         <Route path="/login" element={<LoginPage />} />
@@ -105,8 +129,8 @@ export const AppRoutes = () => {
         <Route path="academic" element={<AcademicManagementPage />} />
         <Route path="pyqs" element={<PYQManagementPage />} />
         <Route path="users" element={<UserManagementPage />} />
-        <Route path="announcements" element={<AnnouncementsPage />} />
-        <Route path="career" element={<CareerHubPage />} />
+        <Route path="announcements" element={<AdminAnnouncementsPage />} />
+        <Route path="career" element={<AdminCareerPage />} />
         <Route path="reports" element={<ReportsManagementPage />} />
         <Route path="audit-logs" element={<AuditLogsPage />} />
       </Route>

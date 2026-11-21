@@ -10,7 +10,8 @@ import {
   Search,
   Filter,
   User,
-  X
+  X,
+  ExternalLink
 } from 'lucide-react';
 import api from '../../api/client';
 import { CardSkeleton } from '../../components/common/SkeletonLoader';
@@ -307,12 +308,21 @@ export const CommunityPage = () => {
               <h3 className="font-serif font-bold text-lg text-navy-900 dark:text-white truncate mr-4">
                 {activeThread.title}
               </h3>
-              <button
-                onClick={() => setActiveThread(null)}
-                className="text-navy-400 hover:text-navy-700 dark:hover:text-white p-1 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  to={`/community/${activeThread.id}`}
+                  className="text-navy-400 hover:text-navy-700 dark:hover:text-white p-1.5 rounded-lg hover:bg-navy-100 dark:hover:bg-navy-800 transition"
+                  title="Open full page"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </Link>
+                <button
+                  onClick={() => setActiveThread(null)}
+                  className="text-navy-400 hover:text-navy-700 dark:hover:text-white p-1 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Modal content body */}

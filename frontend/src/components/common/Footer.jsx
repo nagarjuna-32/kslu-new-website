@@ -105,6 +105,11 @@ export const Footer = () => {
             </h4>
             <ul className="space-y-2">
               <li>
+                <Link to="/resources" className="hover:text-gold-400 transition font-medium text-gold-400">
+                  Academic Resources Overview
+                </Link>
+              </li>
+              <li>
                 <Link to="/pyqs" className="hover:text-gold-400 transition">
                   Previous Year Papers (PYQs)
                 </Link>

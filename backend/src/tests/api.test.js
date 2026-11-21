@@ -2,10 +2,15 @@ const test = require('node:test');
 const assert = require('node:assert');
 const request = require('supertest');
 const { app } = require('../server');
+const prisma = require('../config/db');
 
 test('KSLU Circle Backend API Suite', async (t) => {
   let authToken = '';
   let testUserId = '';
+
+  t.after(async () => {
+    await prisma.$disconnect();
+  });
 
   await t.test('1. GET /api/health should return 200 and healthy status', async () => {
     const res = await request(app).get('/api/health');
