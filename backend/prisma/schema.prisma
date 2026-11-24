@@ -179,6 +179,8 @@ model StudyMaterial {
   semesterId      String
   subjectId       String
   schemeId        String?
+  category        String            @default("STUDY_NOTES") // STUDY_NOTES, IMPORTANT_QUESTIONS, REFERENCE_BOOKS, CASE_LAWS
+  isExternalLink  Boolean           @default(false)
   tags            String?           // Comma-separated or JSON string
   fileUrl         String
   filePublicId    String?
@@ -211,6 +213,7 @@ model StudyMaterial {
   @@index([courseId])
   @@index([semesterId])
   @@index([subjectId])
+  @@index([category])
   @@index([status])
   @@index([uploadedById])
 }

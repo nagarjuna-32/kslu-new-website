@@ -251,13 +251,22 @@ export const HomePage = () => {
                 <span className="text-xs text-navy-500 font-medium">
                   {course._count?.subjects || 0} Core Subjects
                 </span>
-                <Link
-                  to={`/pyqs?courseId=${course.id}`}
-                  className="text-xs font-semibold text-navy-900 dark:text-gold-400 flex items-center gap-1 hover:underline"
-                >
-                  <span>Browse PYQs</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                <div className="flex items-center gap-3">
+                  <Link
+                    to={`/notes?courseId=${course.id}`}
+                    className="text-xs font-semibold text-navy-900 dark:text-gold-400 flex items-center gap-1 hover:underline"
+                  >
+                    <span>Notes</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                  <Link
+                    to={`/pyqs?courseId=${course.id}`}
+                    className="text-xs text-navy-500 hover:text-navy-900 dark:hover:text-white flex items-center gap-1"
+                  >
+                    <span>PYQs</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
               </div>
             </div>
           ))}

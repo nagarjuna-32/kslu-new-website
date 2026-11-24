@@ -19,6 +19,7 @@ export const UploadNotePage = () => {
   const [courseId, setCourseId] = useState('');
   const [semesterId, setSemesterId] = useState('');
   const [subjectId, setSubjectId] = useState('');
+  const [category, setCategory] = useState('STUDY_NOTES');
   const [tags, setTags] = useState('');
   const [file, setFile] = useState(null);
 
@@ -33,24 +34,26 @@ export const UploadNotePage = () => {
   }, []);
 
   useEffect(() => {
+    setSemesterId('');
+    setSubjectId('');
+    setSubjects([]);
     if (courseId) {
       api.get(`/academic/courses/${courseId}/semesters`)
         .then(res => setSemesters(res.data?.semesters || []))
         .catch(() => setSemesters([]));
     } else {
       setSemesters([]);
-      setSemesterId('');
     }
   }, [courseId]);
 
   useEffect(() => {
+    setSubjectId('');
     if (courseId && semesterId) {
       api.get(`/academic/subjects?courseId=${courseId}&semesterId=${semesterId}`)
         .then(res => setSubjects(res.data?.subjects || []))
         .catch(() => setSubjects([]));
     } else {
       setSubjects([]);
-      setSubjectId('');
     }
   }, [courseId, semesterId]);
 
@@ -77,6 +80,7 @@ export const UploadNotePage = () => {
       formData.append('courseId', courseId);
       formData.append('semesterId', semesterId);
       formData.append('subjectId', subjectId);
+      formData.append('category', category);
       formData.append('tags', tags);
       formData.append('file', file);
 
@@ -211,6 +215,24 @@ export const UploadNotePage = () => {
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* Notes Category */}
+            <div>
+              <label className="block font-semibold text-navy-800 dark:text-navy-200 mb-1.5">
+                Resource Category *
+              </label>
+              <select
+                required
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-navy-50 dark:bg-navy-800 border border-navy-200 dark:border-navy-700 rounded-xl text-navy-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gold-500"
+              >
+                <option value="STUDY_NOTES">📖 Study Notes (General lecture notes, summaries, class notes)</option>
+                <option value="IMPORTANT_QUESTIONS">❓ Important Questions (Probable examination questions, Q&A guides)</option>
+                <option value="REFERENCE_BOOKS">📚 Reference Books (Recommended textbooks, reading materials)</option>
+                <option value="CASE_LAWS">⚖️ Case Laws (Landmark judgments, case briefs, precedents)</option>
+              </select>
             </div>
 
             {/* Description */}

@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const prisma = require('../config/db');
 const { successResponse, errorResponse, paginatedResponse } = require('../utils/apiResponse');
-const { noteUploadSchema } = require('../validators');
+const { noteUploadSchema, adminResourceSchema } = require('../validators');
 const { uploadFile, deleteFile } = require('../services/file.service');
 const { emitToUser } = require('../services/socket.service');
 const { recordAuditLog } = require('../middleware/audit.middleware');
@@ -14,6 +14,7 @@ const listNotes = async (req, res, next) => {
       semesterId,
       subjectId,
       schemeId,
+      category,
       search,
       sortBy = 'createdAt',
       order = 'desc',
@@ -28,10 +29,22 @@ const listNotes = async (req, res, next) => {
     // Public list only shows APPROVED notes
     const where = { status: 'APPROVED' };
 
-    if (courseId) where.courseId = courseId;
-    if (semesterId) where.semesterId = semesterId;
-    if (subjectId) where.subjectId = subjectId;
+    let targetSubject = null;
+    if (subjectId) {
+      targetSubject = await prisma.subject.findUnique({ where: { id: subjectId } });
+    }
+
+    if (targetSubject && targetSubject.code.startsWith('KSLU-INT-')) {
+      // Integrated common core law subject: shared across all 4 integrated programs
+      where.subject = { code: targetSubject.code };
+    } else {
+      if (courseId) where.courseId = courseId;
+      if (semesterId) where.semesterId = semesterId;
+      if (subjectId) where.subjectId = subjectId;
+    }
+
     if (schemeId) where.schemeId = schemeId;
+    if (category) where.category = category;
 
     if (search) {
       where.OR = [
@@ -179,6 +192,7 @@ const uploadNote = async (req, res, next) => {
         semesterId: validated.semesterId,
         subjectId: validated.subjectId,
         schemeId: validated.schemeId || null,
+        category: validated.category || 'STUDY_NOTES',
         tags: validated.tags || null,
         fileUrl: uploaded.fileUrl,
         filePublicId: uploaded.filePublicId,
@@ -416,16 +430,91 @@ const reportNote = async (req, res, next) => {
   }
 };
 
+const getCategoryCounts = async (req, res, next) => {
+  try {
+    const { courseId, semesterId, subjectId } = req.query;
+
+    const where = { status: 'APPROVED' };
+
+    let targetSubject = null;
+    if (subjectId) {
+      targetSubject = await prisma.subject.findUnique({ where: { id: subjectId } });
+    }
+
+    if (targetSubject && targetSubject.code.startsWith('KSLU-INT-')) {
+      where.subject = { code: targetSubject.code };
+    } else {
+      if (courseId) where.courseId = courseId;
+      if (semesterId) where.semesterId = semesterId;
+      if (subjectId) where.subjectId = subjectId;
+    }
+
+    const groups = await prisma.studyMaterial.groupBy({
+      by: ['category'],
+      where,
+      _count: {
+        id: true
+      }
+    });
+
+    const counts = {
+      STUDY_NOTES: 0,
+      IMPORTANT_QUESTIONS: 0,
+      REFERENCE_BOOKS: 0,
+      CASE_LAWS: 0,
+      TOTAL: 0
+    };
+
+    let total = 0;
+    groups.forEach((g) => {
+      const cat = g.category || 'STUDY_NOTES';
+      if (counts.hasOwnProperty(cat)) {
+        counts[cat] = g._count.id;
+      }
+      total += g._count.id;
+    });
+    counts.TOTAL = total;
+
+    return successResponse(res, { counts });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Admin Moderation Controllers
 const adminListNotes = async (req, res, next) => {
   try {
-    const { status, page = 1, limit = 20 } = req.query;
+    const { status, courseId, semesterId, subjectId, category, search, page = 1, limit = 20 } = req.query;
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 20;
     const skip = (pageNum - 1) * limitNum;
 
     const where = {};
     if (status) where.status = status;
+
+    if (subjectId) {
+      const targetSub = await prisma.subject.findUnique({ where: { id: subjectId } });
+      if (targetSub && targetSub.code.startsWith('KSLU-INT-')) {
+        where.subject = { code: targetSub.code };
+      } else {
+        where.subjectId = subjectId;
+        if (courseId) where.courseId = courseId;
+        if (semesterId) where.semesterId = semesterId;
+      }
+    } else {
+      if (courseId) where.courseId = courseId;
+      if (semesterId) where.semesterId = semesterId;
+    }
+
+    if (category) where.category = category;
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search } },
+        { description: { contains: search } },
+        { tags: { contains: search } }
+      ];
+    }
 
     const [total, items] = await Promise.all([
       prisma.studyMaterial.count({ where }),
@@ -435,9 +524,9 @@ const adminListNotes = async (req, res, next) => {
         take: limitNum,
         orderBy: { createdAt: 'desc' },
         include: {
-          course: { select: { name: true, code: true } },
-          semester: { select: { title: true } },
-          subject: { select: { name: true, code: true } },
+          course: { select: { id: true, name: true, code: true } },
+          semester: { select: { id: true, semesterNumber: true, title: true } },
+          subject: { select: { id: true, name: true, code: true } },
           uploadedBy: { select: { id: true, fullName: true, email: true, collegeName: true } },
           approvedBy: { select: { id: true, fullName: true } }
         }
@@ -541,8 +630,198 @@ const adminRejectNote = async (req, res, next) => {
   }
 };
 
+// Validate academic hierarchy
+const validateAcademicHierarchy = async (courseId, semesterId, subjectId) => {
+  const [course, semester, subject] = await Promise.all([
+    prisma.course.findUnique({ where: { id: courseId } }),
+    prisma.semester.findUnique({ where: { id: semesterId } }),
+    prisma.subject.findUnique({ where: { id: subjectId } })
+  ]);
+
+  if (!course) throw new Error('Selected course does not exist.');
+  if (!semester) throw new Error('Selected semester does not exist.');
+  if (!subject) throw new Error('Selected subject does not exist.');
+
+  if (semester.courseId !== courseId) {
+    throw new Error('Semester does not belong to the selected course.');
+  }
+
+  if (subject.courseId !== courseId || subject.semesterId !== semesterId) {
+    throw new Error('Subject does not belong to the selected course and semester.');
+  }
+
+  return { course, semester, subject };
+};
+
+const adminCreateResource = async (req, res, next) => {
+  try {
+    const validated = adminResourceSchema.parse(req.body);
+
+    // Validate hierarchy
+    try {
+      await validateAcademicHierarchy(validated.courseId, validated.semesterId, validated.subjectId);
+    } catch (hierarchyErr) {
+      return errorResponse(res, hierarchyErr.message, 400);
+    }
+
+    let fileUrl = validated.fileUrl;
+    let filePublicId = null;
+    let fileSize = 0;
+    let fileType = 'application/pdf';
+    let isExternalLink = validated.isExternalLink || false;
+
+    if (req.file) {
+      const uploaded = await uploadFile(req.file, 'notes');
+      fileUrl = uploaded.fileUrl;
+      filePublicId = uploaded.filePublicId;
+      fileSize = uploaded.fileSize;
+      fileType = uploaded.fileType;
+      isExternalLink = false;
+    } else if (!fileUrl) {
+      return errorResponse(res, 'Please provide an uploaded PDF or an external resource link.', 400);
+    }
+
+    const note = await prisma.studyMaterial.create({
+      data: {
+        title: validated.title,
+        description: validated.description,
+        courseId: validated.courseId,
+        semesterId: validated.semesterId,
+        subjectId: validated.subjectId,
+        schemeId: validated.schemeId || null,
+        category: validated.category,
+        isExternalLink,
+        tags: validated.tags || null,
+        fileUrl,
+        filePublicId,
+        fileSize,
+        fileType,
+        status: validated.status || 'APPROVED',
+        approvedById: req.user.id,
+        approvedAt: new Date(),
+        uploadedById: req.user.id
+      },
+      include: {
+        course: { select: { id: true, name: true, code: true } },
+        semester: { select: { id: true, semesterNumber: true, title: true } },
+        subject: { select: { id: true, name: true, code: true } }
+      }
+    });
+
+    await recordAuditLog(req.user.id, 'RESOURCE_CREATED', 'StudyMaterial', note.id, { title: note.title, category: note.category }, req);
+
+    return successResponse(res, { note }, 'Study resource created and published successfully.', 201);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const adminUpdateResource = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const existing = await prisma.studyMaterial.findUnique({ where: { id } });
+    if (!existing) {
+      return errorResponse(res, 'Resource not found.', 404);
+    }
+
+    const {
+      title,
+      description,
+      courseId,
+      semesterId,
+      subjectId,
+      schemeId,
+      category,
+      status,
+      isExternalLink,
+      fileUrl,
+      tags
+    } = req.body;
+
+    const targetCourseId = courseId || existing.courseId;
+    const targetSemesterId = semesterId || existing.semesterId;
+    const targetSubjectId = subjectId || existing.subjectId;
+
+    if (courseId || semesterId || subjectId) {
+      try {
+        await validateAcademicHierarchy(targetCourseId, targetSemesterId, targetSubjectId);
+      } catch (hierarchyErr) {
+        return errorResponse(res, hierarchyErr.message, 400);
+      }
+    }
+
+    let updateData = {
+      ...(title && { title }),
+      ...(description && { description }),
+      ...(courseId && { courseId }),
+      ...(semesterId && { semesterId }),
+      ...(subjectId && { subjectId }),
+      ...(schemeId !== undefined && { schemeId: schemeId || null }),
+      ...(category && { category }),
+      ...(status && { status }),
+      ...(tags !== undefined && { tags: tags || null })
+    };
+
+    if (req.file) {
+      const uploaded = await uploadFile(req.file, 'notes');
+      updateData.fileUrl = uploaded.fileUrl;
+      updateData.filePublicId = uploaded.filePublicId;
+      updateData.fileSize = uploaded.fileSize;
+      updateData.fileType = uploaded.fileType;
+      updateData.isExternalLink = false;
+    } else if (fileUrl !== undefined) {
+      updateData.fileUrl = fileUrl;
+      if (isExternalLink !== undefined) {
+        updateData.isExternalLink = Boolean(isExternalLink);
+      }
+    }
+
+    const updated = await prisma.studyMaterial.update({
+      where: { id },
+      data: updateData,
+      include: {
+        course: { select: { id: true, name: true, code: true } },
+        semester: { select: { id: true, semesterNumber: true, title: true } },
+        subject: { select: { id: true, name: true, code: true } }
+      }
+    });
+
+    await recordAuditLog(req.user.id, 'RESOURCE_UPDATED', 'StudyMaterial', id, { title: updated.title }, req);
+
+    return successResponse(res, { note: updated }, 'Resource updated successfully.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+const adminDeleteResource = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const existing = await prisma.studyMaterial.findUnique({ where: { id } });
+    if (!existing) {
+      return errorResponse(res, 'Resource not found.', 404);
+    }
+
+    if (existing.fileUrl && existing.fileUrl.startsWith('/uploads/')) {
+      const filePath = path.resolve(__dirname, '../../uploads', existing.fileUrl.replace('/uploads/', ''));
+      if (fs.existsSync(filePath)) {
+        try { fs.unlinkSync(filePath); } catch (e) { /* ignore */ }
+      }
+    }
+
+    await prisma.studyMaterial.delete({ where: { id } });
+
+    await recordAuditLog(req.user.id, 'RESOURCE_DELETED', 'StudyMaterial', id, { title: existing.title }, req);
+
+    return successResponse(res, null, 'Resource deleted successfully.');
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   listNotes,
+  getCategoryCounts,
   getNoteById,
   uploadNote,
   mySubmissions,
@@ -552,5 +831,8 @@ module.exports = {
   reportNote,
   adminListNotes,
   adminApproveNote,
-  adminRejectNote
+  adminRejectNote,
+  adminCreateResource,
+  adminUpdateResource,
+  adminDeleteResource
 };

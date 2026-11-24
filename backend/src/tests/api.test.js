@@ -142,4 +142,23 @@ test('KSLU Circle Backend API Suite', async (t) => {
     assert.ok(res.body.data.explanation.length > 50);
     assert.ok(res.body.data.explanation.includes('DISCLAIMER'));
   });
+
+  await t.test('13. GET /api/notes/categories-count should return counts for all 4 categories', async () => {
+    const res = await request(app).get('/api/notes/categories-count');
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.success, true);
+    assert.ok(res.body.data.counts);
+    assert.strictEqual(typeof res.body.data.counts.STUDY_NOTES, 'number');
+    assert.strictEqual(typeof res.body.data.counts.IMPORTANT_QUESTIONS, 'number');
+    assert.strictEqual(typeof res.body.data.counts.REFERENCE_BOOKS, 'number');
+    assert.strictEqual(typeof res.body.data.counts.CASE_LAWS, 'number');
+    assert.strictEqual(typeof res.body.data.counts.TOTAL, 'number');
+  });
+
+  await t.test('14. GET /api/notes?category=STUDY_NOTES should filter resources by category', async () => {
+    const res = await request(app).get('/api/notes?category=STUDY_NOTES&page=1&limit=5');
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.success, true);
+    assert.ok(Array.isArray(res.body.data.items));
+  });
 });

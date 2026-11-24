@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
   Shield,
+  BookOpen,
   CheckSquare,
   GraduationCap,
   FileText,
@@ -23,7 +24,7 @@ export const AdminLayout = () => {
 
   const adminLinks = [
     { name: 'Dashboard Analytics', path: '/admin', icon: LayoutDashboard },
-    { name: 'Notes Moderation Queue', path: '/admin/moderation', icon: CheckSquare },
+    { name: 'Notes & Resources Manager', path: '/admin/moderation', icon: BookOpen },
     { name: 'Academic Curriculum', path: '/admin/academic', icon: GraduationCap },
     { name: 'PYQ Management', path: '/admin/pyqs', icon: FileText },
     { name: 'User Management', path: '/admin/users', icon: Users },

@@ -112,6 +112,12 @@ export const PYQLibraryPage = () => {
     } else {
       next.delete(key);
     }
+    if (key === 'courseId') {
+      next.delete('semesterId');
+      next.delete('subjectId');
+    } else if (key === 'semesterId') {
+      next.delete('subjectId');
+    }
     // Reset page to 1 on filter change
     if (key !== 'page') next.set('page', '1');
     setSearchParams(next);

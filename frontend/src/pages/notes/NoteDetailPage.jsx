@@ -129,6 +129,11 @@ export const NoteDetailPage = () => {
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Verified by Academic Moderator</span>
               </span>
+              {note.category && (
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded bg-gold-100 text-navy-900 dark:bg-gold-500/20 dark:text-gold-300 border border-gold-300 dark:border-gold-700">
+                  {note.category === 'STUDY_NOTES' ? '📖 Study Notes' : note.category === 'IMPORTANT_QUESTIONS' ? '❓ Important Questions' : note.category === 'REFERENCE_BOOKS' ? '📚 Reference Books' : '⚖️ Case Laws'}
+                </span>
+              )}
               <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded bg-navy-100 dark:bg-navy-800 text-navy-700 dark:text-navy-300">
                 {note.subject?.code}
               </span>

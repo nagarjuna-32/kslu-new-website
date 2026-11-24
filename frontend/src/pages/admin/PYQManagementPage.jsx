@@ -61,24 +61,26 @@ export const PYQManagementPage = () => {
   }, []);
 
   useEffect(() => {
+    setSemesterId('');
+    setSubjectId('');
+    setSubjects([]);
     if (courseId) {
       api.get(`/academic/courses/${courseId}/semesters`)
         .then(res => setSemesters(res.data?.semesters || []))
         .catch(() => setSemesters([]));
     } else {
       setSemesters([]);
-      setSemesterId('');
     }
   }, [courseId]);
 
   useEffect(() => {
+    setSubjectId('');
     if (courseId && semesterId) {
       api.get(`/academic/subjects?courseId=${courseId}&semesterId=${semesterId}`)
         .then(res => setSubjects(res.data?.subjects || []))
         .catch(() => setSubjects([]));
     } else {
       setSubjects([]);
-      setSubjectId('');
     }
   }, [courseId, semesterId]);
 

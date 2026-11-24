@@ -67,13 +67,30 @@ const pyqUploadSchema = z.object({
 });
 
 // Notes Validators
+const NOTE_CATEGORIES = ['STUDY_NOTES', 'IMPORTANT_QUESTIONS', 'REFERENCE_BOOKS', 'CASE_LAWS'];
+
 const noteUploadSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters'),
-  description: z.string().min(10, 'Please provide an adequate description'),
+  description: z.string().min(5, 'Please provide an adequate description'),
   courseId: z.string().min(1, 'Course is required'),
   semesterId: z.string().min(1, 'Semester is required'),
   subjectId: z.string().min(1, 'Subject is required'),
   schemeId: z.string().optional().nullable(),
+  category: z.enum(['STUDY_NOTES', 'IMPORTANT_QUESTIONS', 'REFERENCE_BOOKS', 'CASE_LAWS']).optional().default('STUDY_NOTES'),
+  tags: z.string().optional().nullable()
+});
+
+const adminResourceSchema = z.object({
+  title: z.string().min(3, 'Title must be at least 3 characters'),
+  description: z.string().min(5, 'Description must be at least 5 characters'),
+  courseId: z.string().min(1, 'Course is required'),
+  semesterId: z.string().min(1, 'Semester is required'),
+  subjectId: z.string().min(1, 'Subject is required'),
+  schemeId: z.string().optional().nullable(),
+  category: z.enum(['STUDY_NOTES', 'IMPORTANT_QUESTIONS', 'REFERENCE_BOOKS', 'CASE_LAWS']).optional().default('STUDY_NOTES'),
+  status: z.enum(['APPROVED', 'PENDING', 'REJECTED']).optional().default('APPROVED'),
+  isExternalLink: z.coerce.boolean().optional().default(false),
+  fileUrl: z.string().optional().nullable(),
   tags: z.string().optional().nullable()
 });
 
@@ -125,6 +142,8 @@ module.exports = {
   subjectSchema,
   pyqUploadSchema,
   noteUploadSchema,
+  adminResourceSchema,
+  NOTE_CATEGORIES,
   discussionSchema,
   commentSchema,
   careerSchema,
