@@ -10,7 +10,11 @@ import {
   RotateCcw,
   Sparkles,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Award,
+  Calendar,
+  Layers,
+  GraduationCap
 } from 'lucide-react';
 import api from '../../api/client';
 import { CardSkeleton } from '../../components/common/SkeletonLoader';
@@ -54,8 +58,21 @@ export const PYQLibraryPage = () => {
           api.get('/academic/courses'),
           api.get('/academic/schemes')
         ]);
-        if (cRes.success) setCourses(cRes.data.courses || []);
-        if (sRes.success) setSchemes(sRes.data.schemes || []);
+        if (cRes.success && cRes.data?.courses) {
+          const order = ['3YR-LLB', '5YR-BALLB', '5YR-BBALLB', '5YR-BCOMLLB', '5YR-BSCLB'];
+          const sorted = [...cRes.data.courses].sort((a, b) => {
+            const idxA = order.indexOf(a.code);
+            const idxB = order.indexOf(b.code);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.name.localeCompare(b.name);
+          });
+          setCourses(sorted);
+        }
+        if (sRes.success && sRes.data?.schemes) {
+          setSchemes(sRes.data.schemes);
+        }
       } catch (err) {
         console.error('Failed to load filter metadata', err);
       }
@@ -67,7 +84,12 @@ export const PYQLibraryPage = () => {
   useEffect(() => {
     if (courseId) {
       api.get(`/academic/courses/${courseId}/semesters`)
-        .then(res => setSemesters(res.data?.semesters || []))
+        .then(res => {
+          if (res.success && res.data?.semesters) {
+            const sorted = (res.data.semesters || []).sort((a, b) => a.semesterNumber - b.semesterNumber);
+            setSemesters(sorted);
+          }
+        })
         .catch(() => setSemesters([]));
     } else {
       setSemesters([]);
@@ -81,7 +103,11 @@ export const PYQLibraryPage = () => {
     if (semesterId) params.append('semesterId', semesterId);
 
     api.get(`/academic/subjects?${params.toString()}`)
-      .then(res => setSubjects(res.data?.subjects || []))
+      .then(res => {
+        if (res.success && res.data?.subjects) {
+          setSubjects(res.data.subjects);
+        }
+      })
       .catch(() => setSubjects([]));
   }, [courseId, semesterId]);
 
@@ -91,6 +117,7 @@ export const PYQLibraryPage = () => {
       setLoading(true);
       try {
         const query = new URLSearchParams(searchParams);
+        if (!query.has('limit')) query.set('limit', '12');
         const response = await api.get(`/pyqs?${query.toString()}`);
         if (response.success && response.data) {
           setPyqs(response.data.items || []);
@@ -105,22 +132,23 @@ export const PYQLibraryPage = () => {
     fetchPYQs();
   }, [searchParams]);
 
-  const updateFilter = (key, value) => {
-    const next = new URLSearchParams(searchParams);
-    if (value) {
-      next.set(key, value);
-    } else {
-      next.delete(key);
-    }
-    if (key === 'courseId') {
-      next.delete('semesterId');
-      next.delete('subjectId');
-    } else if (key === 'semesterId') {
-      next.delete('subjectId');
-    }
-    // Reset page to 1 on filter change
-    if (key !== 'page') next.set('page', '1');
-    setSearchParams(next);
+  // Atomic filter updater to prevent race conditions
+  const updateFilters = (updates) => {
+    setSearchParams((prevParams) => {
+      const next = new URLSearchParams(prevParams);
+      Object.entries(updates).forEach(([key, val]) => {
+        if (val !== undefined && val !== null && val !== '') {
+          next.set(key, String(val));
+        } else {
+          next.delete(key);
+        }
+      });
+      // Reset page to 1 on filter changes
+      if (!('page' in updates)) {
+        next.set('page', '1');
+      }
+      return next;
+    });
   };
 
   const resetFilters = () => {
@@ -145,7 +173,7 @@ export const PYQLibraryPage = () => {
         );
         setToast({
           title: res.data.isBookmarked ? 'Bookmarked' : 'Removed Bookmark',
-          message: res.message,
+          message: res.message || (res.data.isBookmarked ? 'Saved to bookmarks.' : 'Removed from bookmarks.'),
           type: 'info'
         });
       }
@@ -155,6 +183,10 @@ export const PYQLibraryPage = () => {
   };
 
   const handleDownload = (pyq) => {
+    if (pyq.fileUrl && pyq.fileUrl.startsWith('http')) {
+      window.open(pyq.fileUrl, '_blank');
+      return;
+    }
     window.open(`/api/pyqs/${pyq.id}/download`, '_blank');
   };
 
@@ -182,8 +214,8 @@ export const PYQLibraryPage = () => {
             <input
               type="text"
               value={search}
-              onChange={(e) => updateFilter('search', e.target.value)}
-              placeholder="Search by title, subject name, or code (e.g. 1011, Constitutional Law)..."
+              onChange={(e) => updateFilters({ search: e.target.value })}
+              placeholder="Search by title, subject name, or code (e.g. Constitutional Law, KSLU-3Y-101)..."
               className="w-full pl-10 pr-4 py-2 bg-navy-50 dark:bg-navy-800 border border-navy-200 dark:border-navy-700 rounded-xl text-xs text-navy-900 dark:text-white placeholder-navy-400 focus:outline-none focus:ring-2 focus:ring-gold-500"
             />
           </div>
@@ -191,7 +223,7 @@ export const PYQLibraryPage = () => {
           <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <select
               value={sortBy}
-              onChange={(e) => updateFilter('sortBy', e.target.value)}
+              onChange={(e) => updateFilters({ sortBy: e.target.value })}
               className="px-3 py-2 bg-navy-50 dark:bg-navy-800 border border-navy-200 dark:border-navy-700 rounded-xl text-xs text-navy-800 dark:text-navy-200 focus:outline-none"
             >
               <option value="createdAt">Sort: Latest Uploaded</option>
@@ -217,11 +249,7 @@ export const PYQLibraryPage = () => {
             <label className="block text-[11px] font-semibold text-navy-500 mb-1">Course</label>
             <select
               value={courseId}
-              onChange={(e) => {
-                updateFilter('courseId', e.target.value);
-                updateFilter('semesterId', '');
-                updateFilter('subjectId', '');
-              }}
+              onChange={(e) => updateFilters({ courseId: e.target.value, semesterId: '', subjectId: '' })}
               className="w-full px-2.5 py-1.5 bg-navy-50 dark:bg-navy-800 border border-navy-200 dark:border-navy-700 rounded-lg text-navy-800 dark:text-navy-200 focus:outline-none"
             >
               <option value="">All Courses</option>
@@ -238,10 +266,7 @@ export const PYQLibraryPage = () => {
             <label className="block text-[11px] font-semibold text-navy-500 mb-1">Semester</label>
             <select
               value={semesterId}
-              onChange={(e) => {
-                updateFilter('semesterId', e.target.value);
-                updateFilter('subjectId', '');
-              }}
+              onChange={(e) => updateFilters({ semesterId: e.target.value, subjectId: '' })}
               disabled={!courseId}
               className="w-full px-2.5 py-1.5 bg-navy-50 dark:bg-navy-800 border border-navy-200 dark:border-navy-700 rounded-lg text-navy-800 dark:text-navy-200 focus:outline-none disabled:opacity-50"
             >
@@ -259,7 +284,7 @@ export const PYQLibraryPage = () => {
             <label className="block text-[11px] font-semibold text-navy-500 mb-1">Subject</label>
             <select
               value={subjectId}
-              onChange={(e) => updateFilter('subjectId', e.target.value)}
+              onChange={(e) => updateFilters({ subjectId: e.target.value })}
               className="w-full px-2.5 py-1.5 bg-navy-50 dark:bg-navy-800 border border-navy-200 dark:border-navy-700 rounded-lg text-navy-800 dark:text-navy-200 focus:outline-none"
             >
               <option value="">All Subjects</option>
@@ -276,13 +301,13 @@ export const PYQLibraryPage = () => {
             <label className="block text-[11px] font-semibold text-navy-500 mb-1">Marking Scheme</label>
             <select
               value={schemeId}
-              onChange={(e) => updateFilter('schemeId', e.target.value)}
+              onChange={(e) => updateFilters({ schemeId: e.target.value })}
               className="w-full px-2.5 py-1.5 bg-navy-50 dark:bg-navy-800 border border-navy-200 dark:border-navy-700 rounded-lg text-navy-800 dark:text-navy-200 focus:outline-none"
             >
               <option value="">All Schemes</option>
               {schemes.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name}
+                  {s.name} ({s.maxMarks} Marks)
                 </option>
               ))}
             </select>
@@ -293,12 +318,12 @@ export const PYQLibraryPage = () => {
             <label className="block text-[11px] font-semibold text-navy-500 mb-1">Exam Year</label>
             <select
               value={examYear}
-              onChange={(e) => updateFilter('examYear', e.target.value)}
+              onChange={(e) => updateFilters({ examYear: e.target.value })}
               className="w-full px-2.5 py-1.5 bg-navy-50 dark:bg-navy-800 border border-navy-200 dark:border-navy-700 rounded-lg text-navy-800 dark:text-navy-200 focus:outline-none"
             >
               <option value="">All Years</option>
-              {[2025, 2024, 2023, 2022, 2021, 2020, 2019].map((yr) => (
-                <option key={yr} value={yr}>
+              {[2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015].map((yr) => (
+                <option key={yr} value={String(yr)}>
                   {yr}
                 </option>
               ))}
@@ -373,7 +398,7 @@ export const PYQLibraryPage = () => {
                   </h3>
                   <div className="flex items-center gap-2 mt-1.5 text-xs text-navy-500">
                     <span className="font-mono font-semibold text-navy-700 dark:text-navy-300">
-                      Code: {paper.subject?.code}
+                      {paper.subject?.code}
                     </span>
                     <span>•</span>
                     <span className="truncate">{paper.subject?.name}</span>
@@ -437,7 +462,7 @@ export const PYQLibraryPage = () => {
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 pt-6">
           <button
-            onClick={() => updateFilter('page', String(pagination.page - 1))}
+            onClick={() => updateFilters({ page: String(pagination.page - 1) })}
             disabled={!pagination.hasPrevPage}
             className="p-2 border border-navy-200 dark:border-navy-700 rounded-xl text-navy-700 dark:text-navy-300 disabled:opacity-40 hover:bg-navy-100 dark:hover:bg-navy-800 transition"
           >
@@ -447,7 +472,7 @@ export const PYQLibraryPage = () => {
             {pagination.page} / {pagination.totalPages}
           </span>
           <button
-            onClick={() => updateFilter('page', String(pagination.page + 1))}
+            onClick={() => updateFilters({ page: String(pagination.page + 1) })}
             disabled={!pagination.hasNextPage}
             className="p-2 border border-navy-200 dark:border-navy-700 rounded-xl text-navy-700 dark:text-navy-300 disabled:opacity-40 hover:bg-navy-100 dark:hover:bg-navy-800 transition"
           >

@@ -28,9 +28,19 @@ const listPYQs = async (req, res, next) => {
 
     const where = { isVerified: true };
 
-    if (courseId) where.courseId = courseId;
-    if (semesterId) where.semesterId = semesterId;
-    if (subjectId) where.subjectId = subjectId;
+    let targetSubject = null;
+    if (subjectId) {
+      targetSubject = await prisma.subject.findUnique({ where: { id: subjectId } });
+    }
+
+    if (targetSubject && targetSubject.code.startsWith('KSLU-INT-')) {
+      where.subject = { code: targetSubject.code };
+    } else {
+      if (courseId) where.courseId = courseId;
+      if (semesterId) where.semesterId = semesterId;
+      if (subjectId) where.subjectId = subjectId;
+    }
+
     if (schemeId) where.schemeId = schemeId;
     if (examYear) where.examYear = parseInt(examYear, 10);
     if (examType) where.examType = examType;
