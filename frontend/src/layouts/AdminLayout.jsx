@@ -12,7 +12,8 @@ import {
   AlertOctagon,
   ScrollText,
   ArrowLeft,
-  LayoutDashboard
+  LayoutDashboard,
+  Cloud
 } from 'lucide-react';
 import { Navbar } from '../components/common/Navbar';
 import { Toast } from '../components/common/Toast';
@@ -27,6 +28,7 @@ export const AdminLayout = () => {
     { name: 'Notes & Resources Manager', path: '/admin/moderation', icon: BookOpen },
     { name: 'Academic Curriculum', path: '/admin/academic', icon: GraduationCap },
     { name: 'PYQ Management', path: '/admin/pyqs', icon: FileText },
+    { name: 'Google Drive PYQ Sync', path: '/admin/drive-sync', icon: Cloud },
     { name: 'User Management', path: '/admin/users', icon: Users },
     { name: 'University Updates', path: '/admin/announcements', icon: Bell },
     { name: 'Career & Moots Hub', path: '/admin/career', icon: Briefcase },

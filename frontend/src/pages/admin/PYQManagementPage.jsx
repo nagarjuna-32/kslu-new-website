@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   FileText,
   Upload,
@@ -7,7 +8,8 @@ import {
   Plus,
   AlertCircle,
   CheckCircle2,
-  X
+  X,
+  Cloud
 } from 'lucide-react';
 import api from '../../api/client';
 import { TableSkeleton } from '../../components/common/SkeletonLoader';
@@ -147,13 +149,23 @@ export const PYQManagementPage = () => {
           </h1>
         </div>
 
-        <button
-          onClick={() => setUploadModalOpen(true)}
-          className="flex items-center gap-2 px-3.5 py-2 bg-navy-900 hover:bg-navy-800 text-gold-400 dark:bg-gold-600 dark:hover:bg-gold-500 dark:text-white text-xs font-bold rounded-xl shadow-md transition self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Upload Official Question Paper</span>
-        </button>
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          <Link
+            to="/admin/drive-sync"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-navy-100 dark:bg-navy-800 hover:bg-navy-200 dark:hover:bg-navy-700 text-navy-800 dark:text-navy-200 text-xs font-bold rounded-xl border border-navy-200 dark:border-navy-700 transition"
+          >
+            <Cloud className="w-4 h-4 text-gold-500" />
+            <span>Google Drive Sync</span>
+          </Link>
+
+          <button
+            onClick={() => setUploadModalOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 bg-navy-900 hover:bg-navy-800 text-gold-400 dark:bg-gold-600 dark:hover:bg-gold-500 dark:text-white text-xs font-bold rounded-xl shadow-md transition"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Upload Official Question Paper</span>
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -197,7 +209,11 @@ export const PYQManagementPage = () => {
                     <td className="px-5 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => setPreviewModal({ isOpen: true, fileUrl: p.fileUrl, title: p.title })}
+                          onClick={() => setPreviewModal({
+                            isOpen: true,
+                            fileUrl: p.driveFileId ? `/api/pyqs/${p.id}/stream` : p.fileUrl,
+                            title: p.title
+                          })}
                           className="p-1.5 bg-navy-100 dark:bg-navy-800 hover:bg-navy-200 rounded-lg text-navy-700 dark:text-navy-300"
                         >
                           <Eye className="w-4 h-4" />

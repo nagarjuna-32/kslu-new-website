@@ -17,5 +17,11 @@ backend/prisma/*.db
 backend/prisma/*.db-journal
 backend/prisma/*.db-shm
 backend/prisma/*.db-wal
+# Google Drive & Cloud Credentials
+backend/config/*.json
+*service-account*.json
+*service_account*.json
+*credentials*.json
+google-service-account.json
 .vscode
 .idea

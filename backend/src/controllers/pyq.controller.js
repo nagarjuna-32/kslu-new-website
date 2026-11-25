@@ -5,6 +5,9 @@ const { successResponse, errorResponse, paginatedResponse } = require('../utils/
 const { pyqUploadSchema } = require('../validators');
 const { uploadFile, deleteFile } = require('../services/file.service');
 const { recordAuditLog } = require('../middleware/audit.middleware');
+const googleDriveService = require('../services/googleDriveService');
+const pyqSyncService = require('../services/pyqSyncService');
+const logger = require('../utils/logger');
 
 const listPYQs = async (req, res, next) => {
   try {
@@ -159,6 +162,10 @@ const downloadPYQ = async (req, res, next) => {
       return errorResponse(res, 'Question paper not found.', 404);
     }
 
+    if (!pyq.isAvailable) {
+      return errorResponse(res, 'This question paper is temporarily unavailable.', 404);
+    }
+
     // Increment download count and record download log
     const ipAddress = req.headers['x-forwarded-for'] || req.socket?.remoteAddress;
     const userAgent = req.headers['user-agent'];
@@ -179,7 +186,20 @@ const downloadPYQ = async (req, res, next) => {
       })
     ]);
 
-    // Handle local file vs external URL
+    // 1. Google Drive PDF Download
+    if (pyq.driveFileId) {
+      try {
+        const driveStream = await googleDriveService.streamFile(pyq.driveFileId);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(pyq.title.replace(/[^a-zA-Z0-9_\-\.\s]/g, '_'))}.pdf"`);
+        return driveStream.stream.pipe(res);
+      } catch (driveErr) {
+        logger.error(`Failed to download Google Drive file ${pyq.driveFileId}: ${driveErr.message}`);
+        return errorResponse(res, 'Unable to download file from Google Drive.', 502);
+      }
+    }
+
+    // 2. Handle local file vs external URL
     if (pyq.fileUrl.startsWith('/uploads/')) {
       const relativePath = pyq.fileUrl.replace('/uploads/', '');
       const fullPath = path.resolve(__dirname, '../../uploads', relativePath);
@@ -191,6 +211,126 @@ const downloadPYQ = async (req, res, next) => {
     }
 
     return successResponse(res, { downloadUrl: pyq.fileUrl }, 'Download URL generated.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Stream PYQ PDF inline for preview (Supporting Google Drive & local uploads with HTTP Range requests)
+const streamPYQ = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const pyq = await prisma.questionPaper.findUnique({
+      where: { id }
+    });
+
+    if (!pyq) {
+      return errorResponse(res, 'Question paper not found.', 404);
+    }
+
+    if (!pyq.isAvailable) {
+      return errorResponse(res, 'This question paper is temporarily unavailable.', 404);
+    }
+
+    // Increment view count
+    await prisma.questionPaper.update({
+      where: { id },
+      data: { viewCount: { increment: 1 } }
+    });
+
+    // 1. Google Drive PDF Streaming
+    if (pyq.driveFileId) {
+      try {
+        const rangeHeader = req.headers.range || null;
+        const driveStream = await googleDriveService.streamFile(pyq.driveFileId, rangeHeader);
+
+        res.status(driveStream.status || 200);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(pyq.title || 'QuestionPaper')}.pdf"`);
+
+        if (driveStream.headers['content-range']) {
+          res.setHeader('Content-Range', driveStream.headers['content-range']);
+        }
+        if (driveStream.headers['content-length']) {
+          res.setHeader('Content-Length', driveStream.headers['content-length']);
+        }
+
+        return driveStream.stream.pipe(res);
+      } catch (driveErr) {
+        logger.error(`Failed to stream Google Drive file ${pyq.driveFileId}: ${driveErr.message}`);
+        return errorResponse(res, 'Unable to stream file from Google Drive.', 502);
+      }
+    }
+
+    // 2. Local uploads streaming
+    if (pyq.fileUrl && pyq.fileUrl.startsWith('/uploads/')) {
+      const relativePath = pyq.fileUrl.replace('/uploads/', '');
+      const fullPath = path.resolve(__dirname, '../../uploads', relativePath);
+      if (fs.existsSync(fullPath)) {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(pyq.title)}.pdf"`);
+        return fs.createReadStream(fullPath).pipe(res);
+      }
+    }
+
+    // 3. Fallback to redirecting to external URL
+    if (pyq.fileUrl && pyq.fileUrl.startsWith('http')) {
+      return res.redirect(pyq.fileUrl);
+    }
+
+    return errorResponse(res, 'File content could not be located.', 404);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Admin: Get Drive sync status and stats
+const getSyncStatus = async (req, res, next) => {
+  try {
+    const status = await pyqSyncService.getSyncStatus();
+    return successResponse(res, status);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Admin: Read-only scan report of detected folders and PDFs
+const getScanReport = async (req, res, next) => {
+  try {
+    const report = await pyqSyncService.runDryRunScan();
+    return successResponse(res, report, 'Google Drive read-only scan completed successfully.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Admin: Trigger full sync
+const triggerFullSync = async (req, res, next) => {
+  try {
+    if (await pyqSyncService.isRunning()) {
+      return errorResponse(res, 'A synchronization job is already actively running.', 409);
+    }
+
+    // Start sync in background so HTTP request does not time out
+    pyqSyncService.runFullSync(req.user.id).catch(err => {
+      logger.error('Background PYQ sync failed: ' + err.message);
+    });
+
+    return successResponse(res, null, 'Google Drive PYQ synchronization started in background.', 202);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Admin: Cancel sync
+const cancelSync = async (req, res, next) => {
+  try {
+    const cancelled = pyqSyncService.cancelSync();
+    if (cancelled) {
+      return successResponse(res, null, 'Cancellation signal sent to sync job.');
+    }
+    return successResponse(res, null, 'No active sync job was running.');
   } catch (error) {
     next(error);
   }
@@ -294,7 +434,12 @@ module.exports = {
   listPYQs,
   getPYQById,
   downloadPYQ,
+  streamPYQ,
   toggleBookmark,
   adminUploadPYQ,
-  adminDeletePYQ
+  adminDeletePYQ,
+  getSyncStatus,
+  getScanReport,
+  triggerFullSync,
+  cancelSync
 };

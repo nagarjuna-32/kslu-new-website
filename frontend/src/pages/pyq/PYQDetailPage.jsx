@@ -228,7 +228,7 @@ export const PYQDetailPage = () => {
             className="w-full h-full max-w-4xl bg-white shadow-xl rounded-lg overflow-hidden transition-transform duration-150"
           >
             <iframe
-              src={`${pyq.fileUrl}#toolbar=0&navpanes=0`}
+              src={`${pyq.driveFileId ? `/api/pyqs/${pyq.id}/stream` : pyq.fileUrl}#toolbar=0&navpanes=0`}
               className="w-full h-full border-0 min-h-[600px]"
               title={pyq.title}
             />

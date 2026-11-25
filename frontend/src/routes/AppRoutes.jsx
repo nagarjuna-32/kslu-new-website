@@ -52,6 +52,7 @@ import { AdminAnnouncementsPage } from '../pages/admin/AdminAnnouncementsPage';
 import { AdminCareerPage } from '../pages/admin/AdminCareerPage';
 import { ReportsManagementPage } from '../pages/admin/ReportsManagementPage';
 import { AuditLogsPage } from '../pages/admin/AuditLogsPage';
+import { DriveSyncPage } from '../pages/admin/DriveSyncPage';
 
 export const AppRoutes = () => {
   return (
@@ -130,6 +131,7 @@ export const AppRoutes = () => {
         <Route path="moderation" element={<NotesModerationPage />} />
         <Route path="academic" element={<AcademicManagementPage />} />
         <Route path="pyqs" element={<PYQManagementPage />} />
+        <Route path="drive-sync" element={<DriveSyncPage />} />
         <Route path="users" element={<UserManagementPage />} />
         <Route path="announcements" element={<AdminAnnouncementsPage />} />
         <Route path="career" element={<AdminCareerPage />} />

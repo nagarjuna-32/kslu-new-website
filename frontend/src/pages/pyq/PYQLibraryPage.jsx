@@ -183,6 +183,10 @@ export const PYQLibraryPage = () => {
   };
 
   const handleDownload = (pyq) => {
+    if (pyq.driveFileId) {
+      window.open(`/api/pyqs/${pyq.id}/download`, '_blank');
+      return;
+    }
     if (pyq.fileUrl && pyq.fileUrl.startsWith('http')) {
       window.open(pyq.fileUrl, '_blank');
       return;
@@ -433,7 +437,7 @@ export const PYQLibraryPage = () => {
                     onClick={() =>
                       setPreviewModal({
                         isOpen: true,
-                        fileUrl: paper.fileUrl,
+                        fileUrl: paper.driveFileId ? `/api/pyqs/${paper.id}/stream` : paper.fileUrl,
                         title: paper.title,
                         id: paper.id
                       })
